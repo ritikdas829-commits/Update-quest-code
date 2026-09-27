@@ -61,15 +61,14 @@ client.tokenStore     = new TokenStore(TOKEN);
 const commandFiles = readdirSync(join(__dirname, 'commands')).filter(f => f.endsWith('.js'));
 for (const file of commandFiles) {
     const mod = await import(pathToFileURL(join(__dirname, 'commands', file)).href);
-    // Single default export
     if (mod.default) {
         const cmd = mod.default;
         if (cmd?.data)   client.commands.set(cmd.data.name, cmd);
         if (cmd?.prefix) client.prefixCommands.set(cmd.prefix, cmd);
     }
-    // Named exports (questCommands.js has multiple)
     for (const [key, cmd] of Object.entries(mod)) {
-        if (key === 'default' || key === 'makeTokenStore' || key === 'TokenStore' || key === 'handleLinkModal' || key === 'handleLinkPromptButton' || key === 'runAutoquestForUser') continue;
+        // 'handleLinkPromptButton' ko yahan allow kar diya hai taaki button clicks handle ho sakein
+        if (key === 'default' || key === 'makeTokenStore' || key === 'TokenStore' || key === 'handleLinkModal') continue;
         if (cmd?.data)   client.commands.set(cmd.data.name, cmd);
         if (cmd?.prefix) client.prefixCommands.set(cmd.prefix, cmd);
     }
