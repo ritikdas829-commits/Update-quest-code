@@ -107,4 +107,9 @@ export class QuestClient {
 
     async fetchQuestsRaw() { return this.get('/quests/@me'); }
     async fetchUserRaw()   { return this.get('/users/@me'); }
+
+    // Naya method video quests ka progress update bhejne ke liye
+    async sendQuestProgress(questId, progressData) {
+        return this.post(`/quests/${questId}/progress`, progressData);
+    }
 }
