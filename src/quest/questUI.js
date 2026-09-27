@@ -37,7 +37,7 @@ export function buildLinkModal() {
 }
 
 /**
- * 2. Link Prompt Card UI (Coquette Theme + Guide Message)
+ * 2. Link Prompt Card UI (Exact Order with Button inside container)
  */
 export function buildLinkPrompt() {
     const mainContainer = new ContainerBuilder()
@@ -59,19 +59,25 @@ export function buildLinkPrompt() {
         )
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `want to use a different token?\n-_your token = safe with us_-`
+                `want to use a different token?`
+            )
+        )
+        .addActionRowComponents(
+            new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('update_token_btn')
+                    .setLabel('Update Token')
+                    .setStyle(ButtonStyle.Secondary)
+            )
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `-_your token = safe with us_-`
             )
         );
 
-    const updateRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId('update_token_btn')
-            .setLabel('Update Token')
-            .setStyle(ButtonStyle.Secondary),
-    );
-
     return { 
-        components: [mainContainer, updateRow], 
+        components: [mainContainer], 
         flags: MessageFlags.IsComponentsV2 
     };
 }
@@ -205,7 +211,7 @@ export function buildQuestInfoCard(quest, phase, claimed = 0, failReason = '') {
 
     const PHASE = {
         starting: { color: 0x5865F2, title: '⚙️  Solving Quest...', bar: '`░░░░░░░░░░`  **0%**  —  *Working on it...*' },
-        done: { color: 0x57F287, title: '✅  Quest Complete!', bar: '`██████████`  **100%**' },
+    done: { color: 0x57F287, title: '✅  Quest Complete!', bar: '`██████████`  **100%**' },
         failed: { color: 0xED4245, title: '❌  Quest Failed', bar: '' },
     };
 
