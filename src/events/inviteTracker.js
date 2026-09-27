@@ -1,4 +1,3 @@
-import { Collection } from 'discord.js';
 import fs from 'fs';
 
 const INVITES_FILE = 'invites.json';
@@ -15,7 +14,7 @@ export async function cacheGuildInvites(guild) {
     }
 }
 
-export async function handleNewMemberJoin(member, client) {
+export async function handleNewMemberJoin(member) {
     const guild = member.guild;
     if (!clientInvites.has(guild.id)) return;
 
