@@ -19,8 +19,8 @@ export default {
             return;
         }
 
-        // Button: link_prompt (opens modal)
-        if (interaction.isButton() && interaction.customId === 'link_prompt') {
+        // Button: update_token_btn (opens modal) - Fixed here
+        if (interaction.isButton() && interaction.customId === 'update_token_btn') {
             await handleLinkPromptButton(interaction);
             return;
         }
