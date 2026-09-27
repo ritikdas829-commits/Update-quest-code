@@ -1,6 +1,6 @@
 import { getEmoji } from '../handlers/emoji.js';
 import { PREFIX } from '../utils/config.js';
-import { checkQuestAccess } from '../utils/checkAccess.js';
+import { checkQuestAccess } from '../utils/checkQuestAccess.js';
 
 export default {
   name: 'messageCreate',
