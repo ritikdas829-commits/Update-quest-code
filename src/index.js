@@ -4,7 +4,7 @@ import { readdirSync } from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 import deployCommands from './utils/deployCommands.js';
-import { makeTokenStore } from './quest/tokenStore.js';
+import { TokenStore } from './quest/tokenStore.js';
 import { writeFileSync, existsSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -56,7 +56,7 @@ const client = new Client({
 
 client.commands       = new Collection();
 client.prefixCommands = new Collection();
-client.tokenStore     = makeTokenStore(TOKEN);
+client.tokenStore     = new TokenStore(TOKEN);
 
 const commandFiles = readdirSync(join(__dirname, 'commands')).filter(f => f.endsWith('.js'));
 for (const file of commandFiles) {
@@ -69,7 +69,7 @@ for (const file of commandFiles) {
     }
     // Named exports (questCommands.js has multiple)
     for (const [key, cmd] of Object.entries(mod)) {
-        if (key === 'default' || key === 'makeTokenStore' || key === 'handleLinkModal' || key === 'handleLinkPromptButton' || key === 'runAutoquestForUser') continue;
+        if (key === 'default' || key === 'makeTokenStore' || key === 'TokenStore' || key === 'handleLinkModal' || key === 'handleLinkPromptButton' || key === 'runAutoquestForUser') continue;
         if (cmd?.data)   client.commands.set(cmd.data.name, cmd);
         if (cmd?.prefix) client.prefixCommands.set(cmd.prefix, cmd);
     }
