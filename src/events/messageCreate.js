@@ -1,5 +1,6 @@
 import { getEmoji } from '../handlers/emoji.js';
 import { PREFIX } from '../utils/config.js';
+import { checkQuestAccess } from '../utils/checkAccess.js';
 
 export default {
   name: 'messageCreate',
@@ -13,6 +14,10 @@ export default {
 
     const command = client.prefixCommands.get(commandName);
     if (!command) return;
+
+    // Check if the user has access before executing the command
+    const hasAccess = await checkQuestAccess(message, client);
+    if (!hasAccess) return; // Stops execution and sends the invite requirement message if they don't have access
 
     try {
       await command.prefixExecute(message, args, client);
