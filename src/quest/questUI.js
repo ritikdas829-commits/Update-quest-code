@@ -37,43 +37,31 @@ export function buildLinkModal() {
 }
 
 /**
- * 2. Link Prompt Card UI (Clean Coquette Theme + Prefix Guide inside single box)
+ * 2. Link Prompt Card UI (Coquette Theme + Guide Message)
  */
 export function buildLinkPrompt() {
     const mainContainer = new ContainerBuilder()
         .setAccentColor(0xFF69B4) // Coquette Pink Accent
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `# 𝓥e Coquettes Autoquest\nfarm discord quests · session runs **16mins**\n\n| use \`${PREFIX}status\` to check progress`
+                `# 𝓥e Coquettes Autoquest\nfarm discord quests · session runs **16mins**\n\n| use \`${PREFIX}guide\` use this command`
             )
         )
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `---\n♡ **token linked** — ready to start\nclick start to begin your session`
+                `♡ **token linked** — ready to start\nclick start to begin your session`
             )
         )
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `### 📖 Prefix Guide\n• \`${PREFIX}quest\` — Start a quest\n• \`${PREFIX}status\` — Check progress\n• \`${PREFIX}link\` — Link your token`
+                `### 📖 Guide\n• \`${PREFIX}quest\` — Start a quest\n• \`${PREFIX}link\` — Link your token`
             )
         )
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `want to use a different token?`
-            )
-        )
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `-_your token = safe with us_-`
+                `want to use a different token?\n-_your token = safe with us_-`
             )
         );
-
-    const startRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId('start_session_btn')
-            .setLabel('Start Session')
-            .setStyle(ButtonStyle.Primary),
-    );
 
     const updateRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -83,7 +71,7 @@ export function buildLinkPrompt() {
     );
 
     return { 
-        components: [mainContainer, startRow, updateRow], 
+        components: [mainContainer, updateRow], 
         flags: MessageFlags.IsComponentsV2 
     };
 }
