@@ -18,7 +18,6 @@ import { PREFIX } from '../utils/config.js';
 
 /**
  * 1. Link Token Modal UI
- * Jab user token link karne ka button dabata hai, toh yeh popup (modal) form khulta hai jisme token paste karna hota hai.
  */
 export function buildLinkModal() {
     const modal = new ModalBuilder()
@@ -38,31 +37,59 @@ export function buildLinkModal() {
 }
 
 /**
- * 2. Link Prompt Card UI
- * Jab user ka token saved nahi hota, tab yeh card dikhta hai jisme token nikalne ka guide aur "Link Token" button hota hai.
+ * 2. Link Prompt Card UI (Clean Coquette Theme + Prefix Guide inside single box)
  */
 export function buildLinkPrompt() {
-    const c = new ContainerBuilder().setAccentColor(0xFEE75C);
-    c.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            `# 🔗 Token Required\nYou need to link your Discord token before using quest commands.\n\nClick **Link Token** below — a popup will appear where you can paste your token.\n\n**How to get your token:**\n\`1.\` Open Discord in your **browser** (not the app)\n\`2.\` Press \`Ctrl+Shift+I\` → **Network** tab → filter \`XHR\`\n\`3.\` Send any message, click the request, find \`Authorization\` in headers\n\`4.\` Copy that value and paste it into the popup\n\n> ⚠️ This is your **user token**, NOT your bot token.`,
-        ),
+    const mainContainer = new ContainerBuilder()
+        .setAccentColor(0xFF69B4) // Coquette Pink Accent
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `# 𝓥e Coquettes Autoquest\nfarm discord quests · session runs **16mins**\n\n| use \`${PREFIX}status\` to check progress`
+            )
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `---\n♡ **token linked** — ready to start\nclick start to begin your session`
+            )
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `### 📖 Prefix Guide\n• \`${PREFIX}quest\` — Start a quest\n• \`${PREFIX}status\` — Check progress\n• \`${PREFIX}link\` — Link your token`
+            )
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `want to use a different token?`
+            )
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `-_your token = safe with us_-`
+            )
+        );
+
+    const startRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId('start_session_btn')
+            .setLabel('Start Session')
+            .setStyle(ButtonStyle.Primary),
     );
-    c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
-    c.addActionRowComponents(
-        new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId('link_prompt')
-                .setLabel('🔗 Link Token')
-                .setStyle(ButtonStyle.Primary),
-        ),
+
+    const updateRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId('update_token_btn')
+            .setLabel('Update Token')
+            .setStyle(ButtonStyle.Secondary),
     );
-    return { components: [c], flags: MessageFlags.IsComponentsV2 };
+
+    return { 
+        components: [mainContainer, startRow, updateRow], 
+        flags: MessageFlags.IsComponentsV2 
+    };
 }
 
 /**
  * 3. No Quests Available Card UI
- * Jab user ke account par koi bhi active ya uncompleted quest nahi bachta, tab yeh card dikhta hai.
  */
 export function buildNoQuestsCard() {
     const c = new ContainerBuilder().setAccentColor(0x4F545C);
@@ -76,7 +103,6 @@ export function buildNoQuestsCard() {
 
 /**
  * 4. Expired Token Card UI
- * Jab user ka saved token expire ho jata hai ya Discord reject kar deta hai, tab yeh error card show hota hai.
  */
 export function buildExpiredTokenCard() {
     const c = new ContainerBuilder().setAccentColor(0xED4245);
@@ -90,7 +116,6 @@ export function buildExpiredTokenCard() {
 
 /**
  * 5. General Error Card UI
- * Jab quest chalate waqt koi bhi unexpected error aa jata hai (jaise 401 Unauthorized ya API error), tab yeh card banta hai.
  */
 export function buildErrorCard(err) {
     const msg = err?.message ?? String(err);
@@ -108,7 +133,6 @@ export function buildErrorCard(err) {
 
 /**
  * 6. Quest Selection Dropdown Card UI
- * Jab user `/quest` command chalata hai aur multiple quests available hote hain, tab yeh list aur select menu (dropdown) wala card dikhta hai.
  */
 export function buildQuestSelectCard(quests) {
     const ICONS = {
@@ -154,7 +178,6 @@ export function buildQuestSelectCard(quests) {
 
 /**
  * 7. Quest Info & Progress Card UI
- * Jab koi quest solve ho raha ho (starting), complete ho chuka ho (done), ya fail ho gaya ho (failed), tab yeh live progress card dikhta hai.
  */
 export function buildQuestInfoCard(quest, phase, claimed = 0, failReason = '') {
     const cfg = quest.config;
