@@ -1,7 +1,6 @@
 import { getEmoji } from '../handlers/emoji.js';
 import { handleLinkModal, handleLinkPromptButton } from '../commands/questCommands.js';
-// Yahan apne guide buttons wale handler ko import karein (file path apne project ke mutabiq check kar lein)
-import { handleGuideButtons } from '../path/to/your/guideFile.js'; 
+import { handleGuideButtons } from './guideCommands.js'; // Apni file ke path ke mutabiq ise adjust kar lein
 
 export default {
     name: 'interactionCreate',
