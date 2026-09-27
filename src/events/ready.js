@@ -6,6 +6,7 @@
 import { ActivityType } from 'discord.js';
 import { PREFIX } from '../utils/config.js';
 import { startAutoquestWatcher } from '../utils/autoquestWatcher.js';
+import { cacheGuildInvites } from '../utils/inviteTracker.js';
 
 const col = {
     reset:  '\x1b[0m',
@@ -31,6 +32,11 @@ export default {
         console.log(`  ${col.green}${col.bright}✓ ${col.white}Logged in as ${col.green}${client.user.tag}${col.reset}`);
         console.log(`  ${col.green}${col.bright}✓ ${col.white}Serving ${col.green}${client.guilds.cache.size}${col.white} guild(s)${col.reset}`);
         console.log(line);
+
+        // Cache invites for all guilds on startup
+        client.guilds.cache.forEach(guild => {
+            cacheGuildInvites(guild);
+        });
 
         startAutoquestWatcher(client);
     },
