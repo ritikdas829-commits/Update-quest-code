@@ -1,6 +1,6 @@
 import { getEmoji } from '../handlers/emoji.js';
 import { handleLinkModal, handleLinkPromptButton } from '../commands/questCommands.js';
-import { handleGuideButtons } from './guideCommands.js'; // Apni file ke path ke mutabiq ise adjust kar lein
+import { handleGuideButtons } from '../commands/guide.js';
 
 export default {
     name: 'interactionCreate',
