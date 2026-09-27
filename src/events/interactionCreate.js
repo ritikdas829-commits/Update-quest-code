@@ -1,10 +1,18 @@
 import { getEmoji } from '../handlers/emoji.js';
 import { handleLinkModal, handleLinkPromptButton } from '../commands/questCommands.js';
+// Yahan apne guide buttons wale handler ko import karein (file path apne project ke mutabiq check kar lein)
+import { handleGuideButtons } from '../path/to/your/guideFile.js'; 
 
 export default {
     name: 'interactionCreate',
     once: false,
     async execute(interaction, client) {
+
+        // Guide Buttons handler (btn_pc, btn_android, btn_ios)
+        if (interaction.isButton() && (interaction.customId === 'btn_pc' || interaction.customId === 'btn_android' || interaction.customId === 'btn_ios')) {
+            await handleGuideButtons(interaction);
+            return;
+        }
 
         // Modal: link token
         if (interaction.isModalSubmit() && interaction.customId === 'link_token_modal') {
