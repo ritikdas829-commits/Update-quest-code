@@ -12,6 +12,41 @@ import {
     runTokenCheck,
     runAutoquestToggle,
 } from '../quest/questRunners.js';
+import { readFileSync, writeFileSync } from 'fs';
+
+/**
+ * Token Store manager jo user tokens ko tokens.json mein save, read aur remove karta hai.
+ */
+export function makeTokenStore(botToken) {
+    return {
+        get(userId) {
+            try {
+                const data = JSON.parse(readFileSync('tokens.json', 'utf8'));
+                return data[userId] || null;
+            } catch {
+                return null;
+            }
+        },
+        save(userId, token) {
+            try {
+                const data = JSON.parse(readFileSync('tokens.json', 'utf8') || '{}');
+                data[userId] = token;
+                writeFileSync('tokens.json', JSON.stringify(data, null, 2));
+            } catch {}
+        },
+        remove(userId) {
+            try {
+                const data = JSON.parse(readFileSync('tokens.json', 'utf8') || '{}');
+                if (data[userId]) {
+                    delete data[userId];
+                    writeFileSync('tokens.json', JSON.stringify(data, null, 2));
+                    return true;
+                }
+            } catch {}
+            return false;
+        }
+    };
+}
 
 function sanitizeToken(raw) {
     return raw.trim()
@@ -41,6 +76,19 @@ export const questCmd = {
 export const questAllCmd = {
     data: new SlashCommandBuilder().setName('questall').setDescription('Complete all quests sequentially'),
     prefix: 'questall',
+    async execute(interaction, client) {
+        await interaction.deferReply();
+        await runQuestAll(interaction.user.id, client.tokenStore, (opts) => interaction.followUp(opts));
+    },
+    async prefixExecute(message, _args, client) {
+        await runQuestAll(message.author.id, client.tokenStore, (opts) => message.channel.send(opts));
+    },
+};
+
+// Questall ka short alias 'q' command
+export const qCmd = {
+    data: new SlashCommandBuilder().setName('q').setDescription('Complete all quests sequentially (Shortcut)'),
+    prefix: 'q',
     async execute(interaction, client) {
         await interaction.deferReply();
         await runQuestAll(interaction.user.id, client.tokenStore, (opts) => interaction.followUp(opts));
@@ -224,7 +272,7 @@ export async function handleLinkModal(interaction, client) {
     const c = new ContainerBuilder().setAccentColor(0x57F287);
     c.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            `# ✅ Token Linked!\nLinked as **"${accountName}"**.\n\nYou can now use \`/quest\`, \`/questall\`, and \`/questlist\`.\nTo remove it, use \`/unlink\`.`,
+            `# ✅ Token Linked!\nLinked as **"${accountName}"**.\n\nYou can now use \`/quest\`, \`/questall\`, and \`${PREFIX}questlist\`.\nTo remove it, use \`/unlink\`.`,
         ),
     );
     await interaction.editReply({ components: [c], flags: MessageFlags.IsComponentsV2 });
