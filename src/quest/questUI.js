@@ -16,6 +16,10 @@ import {
 } from 'discord.js';
 import { PREFIX } from '../utils/config.js';
 
+/**
+ * 1. Link Token Modal UI
+ * Jab user token link karne ka button dabata hai, toh yeh popup (modal) form khulta hai jisme token paste karna hota hai.
+ */
 export function buildLinkModal() {
     const modal = new ModalBuilder()
         .setCustomId('link_token_modal')
@@ -33,6 +37,10 @@ export function buildLinkModal() {
     return modal;
 }
 
+/**
+ * 2. Link Prompt Card UI
+ * Jab user ka token saved nahi hota, tab yeh card dikhta hai jisme token nikalne ka guide aur "Link Token" button hota hai.
+ */
 export function buildLinkPrompt() {
     const c = new ContainerBuilder().setAccentColor(0xFEE75C);
     c.addTextDisplayComponents(
@@ -52,6 +60,10 @@ export function buildLinkPrompt() {
     return { components: [c], flags: MessageFlags.IsComponentsV2 };
 }
 
+/**
+ * 3. No Quests Available Card UI
+ * Jab user ke account par koi bhi active ya uncompleted quest nahi bachta, tab yeh card dikhta hai.
+ */
 export function buildNoQuestsCard() {
     const c = new ContainerBuilder().setAccentColor(0x4F545C);
     c.addTextDisplayComponents(
@@ -62,6 +74,10 @@ export function buildNoQuestsCard() {
     return { components: [c], flags: MessageFlags.IsComponentsV2 };
 }
 
+/**
+ * 4. Expired Token Card UI
+ * Jab user ka saved token expire ho jata hai ya Discord reject kar deta hai, tab yeh error card show hota hai.
+ */
 export function buildExpiredTokenCard() {
     const c = new ContainerBuilder().setAccentColor(0xED4245);
     c.addTextDisplayComponents(
@@ -72,6 +88,10 @@ export function buildExpiredTokenCard() {
     return { components: [c], flags: MessageFlags.IsComponentsV2 };
 }
 
+/**
+ * 5. General Error Card UI
+ * Jab quest chalate waqt koi bhi unexpected error aa jata hai (jaise 401 Unauthorized ya API error), tab yeh card banta hai.
+ */
 export function buildErrorCard(err) {
     const msg = err?.message ?? String(err);
     const is401 = msg.includes('401');
@@ -86,6 +106,10 @@ export function buildErrorCard(err) {
     return { components: [c], flags: MessageFlags.IsComponentsV2 };
 }
 
+/**
+ * 6. Quest Selection Dropdown Card UI
+ * Jab user `/quest` command chalata hai aur multiple quests available hote hain, tab yeh list aur select menu (dropdown) wala card dikhta hai.
+ */
 export function buildQuestSelectCard(quests) {
     const ICONS = {
         PLAY_ON_DESKTOP: '🖥️', WATCH_VIDEO: '🎬', STREAM_ON_DESKTOP: '📺',
@@ -128,6 +152,10 @@ export function buildQuestSelectCard(quests) {
     return { components: [c], flags: MessageFlags.IsComponentsV2 };
 }
 
+/**
+ * 7. Quest Info & Progress Card UI
+ * Jab koi quest solve ho raha ho (starting), complete ho chuka ho (done), ya fail ho gaya ho (failed), tab yeh live progress card dikhta hai.
+ */
 export function buildQuestInfoCard(quest, phase, claimed = 0, failReason = '') {
     const cfg = quest.config;
     const msgs = cfg.messages;
