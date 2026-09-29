@@ -44,6 +44,11 @@ export class QuestClient {
     async #request(method, path, body, query) {
         const url = `${BASE_URL}${path}${query ? `?${query}` : ''}`;
 
+        // FIX: Agar POST request me body undefined hai, toh automatically empty JSON object {} bhej do
+        if (method === 'POST' && body === undefined) {
+            body = {};
+        }
+
         for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
             let res;
             try {
@@ -87,6 +92,9 @@ export class QuestClient {
 
     async rawCall(method, path, body, base = 'v10') {
         const baseUrl = base === 'v9' ? BASE_URL_V9 : BASE_URL;
+        if (method === 'POST' && body === undefined) {
+            body = {};
+        }
         try {
             const res = await fetch(`${baseUrl}${path}`, {
                 method,
@@ -108,7 +116,6 @@ export class QuestClient {
     async fetchQuestsRaw() { return this.get('/quests/@me'); }
     async fetchUserRaw()   { return this.get('/users/@me'); }
 
-    // Naya method video quests ka progress update bhejne ke liye
     async sendQuestProgress(questId, progressData) {
         return this.post(`/quests/${questId}/progress`, progressData);
     }
