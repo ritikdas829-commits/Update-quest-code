@@ -37,42 +37,40 @@ export function buildLinkModal() {
 }
 
 /**
- * 2. Link Prompt Card UI (Exact Order with Button inside container)
+ * 2. Link Prompt Card UI (Exact layout matching the screenshot — Free version)
  */
-export function buildLinkPrompt() {
+export async function buildLinkPrompt(tokenStore, userId) {
+    const token1 = await tokenStore.get(`${userId}_slot_1`) || await tokenStore.get(userId);
+
     const mainContainer = new ContainerBuilder()
-        .setAccentColor(0xFF69B4) // Coquette Pink Accent
+        .setAccentColor(0x2B2D31)
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `# 𝓥e Coquettes Autoquest\nfarm discord quests · session runs **16mins**\n\n| use \`${PREFIX}guide\` use this command`
+                `### **Free Link**\n\n` +
+                `**Terms & Privacy**\n` +
+                `> By linking your Discord token, you allow the bot to use it for quest completion. Use \`${PREFIX}guide\` if you need the exact token flow guide first.`
             )
         )
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `♡ **token linked** — ready to start\nclick start to begin your session`
-            )
-        )
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `### 📖 Guide\n• \`${PREFIX}quest\` — Start a quest\n• \`${PREFIX}link\` — Link your token`
-            )
-        )
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `want to use a different token?`
+                `### **Account Panel**\n` +
+                `**#1 Account Configuration**\n\n` +
+                `• ${token1 ? 'Linked (Free Slot)' : 'Not Linked (Free Slot)'}\n` +
+                `• **Status:** ${token1 ? 'Active ✅' : 'Not Active'}\n` +
+                `• **Account Age:** Free\n` +
+                `• **Linked At:** ${token1 ? 'Connected' : 'N/A'}`
             )
         )
         .addActionRowComponents(
             new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
-                    .setCustomId('update_token_btn')
-                    .setLabel('Update Token')
+                    .setCustomId('link_slot_1_btn')
+                    .setLabel(token1 ? 'Manage / Unlink' : 'Link')
+                    .setStyle(token1 ? ButtonStyle.Danger : ButtonStyle.Success),
+                new ButtonBuilder()
+                    .setCustomId('btn_guide')
+                    .setLabel('Guide')
                     .setStyle(ButtonStyle.Secondary)
-            )
-        )
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `-_your token = safe with us_-`
             )
         );
 
@@ -211,7 +209,7 @@ export function buildQuestInfoCard(quest, phase, claimed = 0, failReason = '') {
 
     const PHASE = {
         starting: { color: 0x5865F2, title: '⚙️  Solving Quest...', bar: '`░░░░░░░░░░`  **0%**  —  *Working on it...*' },
-    done: { color: 0x57F287, title: '✅  Quest Complete!', bar: '`██████████`  **100%**' },
+        done: { color: 0x57F287, title: '✅  Quest Complete!', bar: '`██████████`  **100%**' },
         failed: { color: 0xED4245, title: '❌  Quest Failed', bar: '' },
     };
 
