@@ -43,10 +43,12 @@ export async function runQuestOne(userId, tokenStore, send) {
 
         const quest = valid.find((q) => q.id === selectedId);
         
-        // Single quest modern single-box initialization
         const { ContainerBuilder, TextDisplayBuilder, SectionBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize } = await import('discord.js');
         const cfg = quest.config;
-        const thumbUrl = `https://cdn.discordapp.com/app-assets/${cfg.application.id}/quest-assets/${cfg.assets.game_tile}.png`;
+        
+        // Safe Thumbnail URL Resolution
+        const assetHash = cfg.assets?.game_tile || cfg.assets?.hero || cfg.assets?.quest_bar;
+        const thumbUrl = assetHash ? `https://cdn.discordapp.com/app-assets/${cfg.application.id}/quest-assets/${assetHash}.png` : null;
 
         const TASK_META = {
             PLAY_ON_DESKTOP: { icon: '🖥️', label: 'Play on Desktop' },
@@ -82,18 +84,21 @@ export async function runQuestOne(userId, tokenStore, send) {
                 return `${meta.icon} ${meta.label}${dur}`;
             });
 
-            c.addSectionComponents(
-                new SectionBuilder()
-                    .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(
-                            `### ${cfg.messages.quest_name}\n` +
-                            `🎮 *${cfg.messages.game_title}*\n` +
-                            `📋 **Tasks:**\n${taskLines.join('\n') || '• Unknown'}\n\n` +
-                            `📊 **Status:** ${status}  •  **Progress:** \`${progress}\``
-                        )
+            const section = new SectionBuilder()
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        `### ${cfg.messages.quest_name}\n` +
+                        `🎮 *${cfg.messages.game_title}*\n` +
+                        `📋 **Tasks:**\n${taskLines.join('\n') || '• Unknown'}\n\n` +
+                        `📊 **Status:** ${status}  •  **Progress:** \`${progress}\``
                     )
-                    .setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbUrl))
-            );
+                );
+
+            if (thumbUrl) {
+                section.setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbUrl));
+            }
+
+            c.addSectionComponents(section);
             return { components: [c], flags: MessageFlags.IsComponentsV2 };
         };
 
@@ -104,7 +109,6 @@ export async function runQuestOne(userId, tokenStore, send) {
         const questDone = await manager.doingQuest(quest, log);
 
         if (!questDone) {
-            const failReason = logs.filter(l => l.startsWith('[FAIL]')).slice(-2).join('\n') || 'Could not be completed automatically.';
             await progressMsg.edit(buildSingleCard('❌ Failed', '0%'));
             return false;
         }
@@ -126,7 +130,7 @@ export async function runQuestOne(userId, tokenStore, send) {
     }
 }
 
-// ── True Parallel Single-Box Dashboard for All Quests ──
+// ── True Parallel Single-Box Dashboard for All Quests (Limited to max 3 to prevent component limits) ──
 
 export async function runQuestAll(userId, tokenStore, send, user = { username: 'User' }) {
     const token = await tokenStore.get(userId);
@@ -160,8 +164,9 @@ export async function runQuestAll(userId, tokenStore, send, user = { username: '
             WATCH_STREAM: { icon: '👁️', label: 'Watch Stream' },
         };
 
-        // Track states for all quests dynamically
-        const questStates = valid.map(q => ({
+        // Slice to max 3 quests to stay safely under Discord's 40 component limit
+        const activeQuests = valid.slice(0, 3);
+        const questStates = activeQuests.map(q => ({
             quest: q,
             status: '⏳ Queued...',
             progress: '0%',
@@ -174,14 +179,15 @@ export async function runQuestAll(userId, tokenStore, send, user = { username: '
             c.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
                     `# 👑 ${userName}'s Quest Dashboard\n` +
-                    `*Status: ${titleStatus}* • Total Quests: **${valid.length}**`
+                    `*Status: ${titleStatus}* • Showing: **${activeQuests.length}/${valid.length}** Quests`
                 )
             );
             c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
 
             questStates.forEach((item) => {
                 const cfg = item.quest.config;
-                const thumbUrl = `https://cdn.discordapp.com/app-assets/${cfg.application.id}/quest-assets/${cfg.assets.game_tile}.png`;
+                const assetHash = cfg.assets?.game_tile || cfg.assets?.hero;
+                const thumbUrl = assetHash ? `https://cdn.discordapp.com/app-assets/${cfg.application.id}/quest-assets/${assetHash}.png` : null;
                 
                 const taskLines = Object.entries((cfg.task_config ?? cfg.task_config_v2)?.tasks ?? {}).map(([type, task]) => {
                     const meta = TASK_META[type] ?? { icon: '⚙️', label: type };
@@ -199,33 +205,33 @@ export async function runQuestAll(userId, tokenStore, send, user = { username: '
                     return line;
                 });
 
-                c.addSectionComponents(
-                    new SectionBuilder()
-                        .addTextDisplayComponents(
-                            new TextDisplayBuilder().setContent(
-                                `### ${cfg.messages.quest_name}\n` +
-                                `🎮 *${cfg.messages.game_title}*\n` +
-                                `📋 **Tasks:**\n${taskLines.join('\n') || '• Unknown'}\n\n` +
-                                `🎁 **Reward:** ${rewardLines.join(', ') || 'No rewards'}\n` +
-                                `📊 **State:** ${item.status}  •  **Progress:** \`${item.progress}\``
-                            )
+                const section = new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            `### ${cfg.messages.quest_name}\n` +
+                            `🎮 *${cfg.messages.game_title}*\n` +
+                            `📋 **Tasks:**\n${taskLines.join('\n') || '• Unknown'}\n\n` +
+                            `🎁 **Reward:** ${rewardLines.join(', ') || 'No rewards'}\n` +
+                            `📊 **State:** ${item.status}  •  **Progress:** \`${item.progress}\``
                         )
-                        .setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbUrl))
-                );
+                    );
+
+                if (thumbUrl) {
+                    section.setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbUrl));
+                }
+
+                c.addSectionComponents(section);
             });
 
             return { components: [c], flags: MessageFlags.IsComponentsV2 };
         };
 
-        // Send initial single dashboard box message
         const dashboardMsg = await send(buildDashboardCard('Initializing Parallel Run...'));
         let completedCount = 0;
 
-        // TRUE PARALLEL EXECUTION USING Promise.all
         await Promise.all(
-            valid.map(async (quest, index) => {
-                const questLogs = [];
-                const log = (m) => { console.log(m); questLogs.push(m); };
+            activeQuests.map(async (quest, index) => {
+                const log = (m) => console.log(m);
 
                 questStates[index].status = '⚙️ Solving...';
                 questStates[index].progress = '50%';
@@ -242,12 +248,11 @@ export async function runQuestAll(userId, tokenStore, send, user = { username: '
                         questStates[index].status = '❌ Failed / Manual Required';
                         questStates[index].progress = '0%';
                     }
-                } catch (err) {
+                } catch {
                     questStates[index].status = '❌ Error Occurred';
                     questStates[index].progress = '0%';
                 }
 
-                // Live update dashboard message as each quest finishes or updates
                 await dashboardMsg.edit(buildDashboardCard('Active Processing...')).catch(() => {});
             })
         );
@@ -298,11 +303,11 @@ export async function runQuestList(userId, tokenStore, send) {
             WATCH_STREAM: { icon: '👁️', label: 'Watch Stream' },
         };
 
-        for (const q of all.slice(0, 10)) {
+        for (const q of all.slice(0, 5)) {
             const cfg = q.config;
             const msgs = cfg.messages;
-            const appId = cfg.application.id;
-            const thumbUrl = `https://cdn.discordapp.com/app-assets/${appId}/quest-assets/${cfg.assets.game_tile}.png`;
+            const assetHash = cfg.assets?.game_tile || cfg.assets?.hero;
+            const thumbUrl = assetHash ? `https://cdn.discordapp.com/app-assets/${cfg.application.id}/quest-assets/${assetHash}.png` : null;
             const expiresEpoch = Math.floor(new Date(cfg.expires_at).getTime() / 1000);
             const daysLeft = Math.max(0, Math.ceil((new Date(cfg.expires_at).getTime() - Date.now()) / 86400000));
 
@@ -329,15 +334,19 @@ export async function runQuestList(userId, tokenStore, send) {
 
             const { ContainerBuilder, TextDisplayBuilder, SectionBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize } = await import('discord.js');
             const c = new ContainerBuilder().setAccentColor(st.color);
-            c.addSectionComponents(
-                new SectionBuilder()
-                    .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(
-                            `# ${st.icon}  ${msgs.quest_name}\n*${msgs.game_title}*  •  ${msgs.game_publisher}`,
-                        ),
-                    )
-                    .setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbUrl)),
-            );
+            
+            const section = new SectionBuilder()
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        `# ${st.icon}  ${msgs.quest_name}\n*${msgs.game_title}*  •  ${msgs.game_publisher}`,
+                    ),
+                );
+
+            if (thumbUrl) {
+                section.setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbUrl));
+            }
+
+            c.addSectionComponents(section);
             c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
             c.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
@@ -346,13 +355,6 @@ export async function runQuestList(userId, tokenStore, send) {
                     `🎁 **Reward**\n${rewardLines.join('\n') || '*No rewards listed*'}`,
                 ),
             );
-            await send({ components: [c], flags: MessageFlags.IsComponentsV2 });
-        }
-
-        if (all.length > 10) {
-            const { ContainerBuilder, TextDisplayBuilder } = await import('discord.js');
-            const c = new ContainerBuilder().setAccentColor(0x4F545C);
-            c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# …and **${all.length - 10}** more quest(s) not shown.`));
             await send({ components: [c], flags: MessageFlags.IsComponentsV2 });
         }
 
