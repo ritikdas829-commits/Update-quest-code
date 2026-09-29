@@ -37,7 +37,7 @@ export function buildLinkModal() {
 }
 
 /**
- * 2. Link Prompt Card UI (Without tokenStore dependency to prevent errors)
+ * 2. Link Prompt Card UI (Guide button removed)
  */
 export function buildLinkPrompt() {
     const mainContainer = new ContainerBuilder()
@@ -64,11 +64,7 @@ export function buildLinkPrompt() {
                 new ButtonBuilder()
                     .setCustomId('link_slot_1_btn')
                     .setLabel('Link')
-                    .setStyle(ButtonStyle.Success),
-                new ButtonBuilder()
-                    .setCustomId('btn_guide')
-                    .setLabel('Guide')
-                    .setStyle(ButtonStyle.Secondary)
+                    .setStyle(ButtonStyle.Success)
             )
         );
 
