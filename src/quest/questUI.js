@@ -37,11 +37,9 @@ export function buildLinkModal() {
 }
 
 /**
- * 2. Link Prompt Card UI (Exact layout matching the screenshot — Free version)
+ * 2. Link Prompt Card UI (Without tokenStore dependency to prevent errors)
  */
-export async function buildLinkPrompt(tokenStore, userId) {
-    const token1 = await tokenStore.get(`${userId}_slot_1`) || await tokenStore.get(userId);
-
+export function buildLinkPrompt() {
     const mainContainer = new ContainerBuilder()
         .setAccentColor(0x2B2D31)
         .addTextDisplayComponents(
@@ -55,18 +53,18 @@ export async function buildLinkPrompt(tokenStore, userId) {
             new TextDisplayBuilder().setContent(
                 `### **Account Panel**\n` +
                 `**#1 Account Configuration**\n\n` +
-                `• ${token1 ? 'Linked (Free Slot)' : 'Not Linked (Free Slot)'}\n` +
-                `• **Status:** ${token1 ? 'Active ✅' : 'Not Active'}\n` +
+                `• Not Linked (Free Slot)\n` +
+                `• **Status:** Not Active\n` +
                 `• **Account Age:** Free\n` +
-                `• **Linked At:** ${token1 ? 'Connected' : 'N/A'}`
+                `• **Linked At:** N/A`
             )
         )
         .addActionRowComponents(
             new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('link_slot_1_btn')
-                    .setLabel(token1 ? 'Manage / Unlink' : 'Link')
-                    .setStyle(token1 ? ButtonStyle.Danger : ButtonStyle.Success),
+                    .setLabel('Link')
+                    .setStyle(ButtonStyle.Success),
                 new ButtonBuilder()
                     .setCustomId('btn_guide')
                     .setLabel('Guide')
