@@ -1,15 +1,6 @@
 import * as crypto from 'node:crypto';
-import mongoose from 'mongoose';
 
 const ALGORITHM = 'aes-256-gcm';
-
-// Mongoose Schema for Tokens
-const tokenSchema = new mongoose.Schema({
-    userId: { type: String, required: true, unique: true },
-    encryptedData: { type: String, required: true }
-});
-
-const TokenModel = mongoose.models.BotToken || mongoose.model('BotToken', tokenSchema);
 
 function deriveKey(secret) {
     return crypto.createHash('sha256').update(secret).digest();
@@ -39,42 +30,42 @@ function decrypt(stored, key) {
 }
 
 export class TokenStore {
-    constructor(secret) {
+    constructor(secret, db) {
         this.key = deriveKey(secret);
+        this.collection = db.collection('tokens');
     }
 
     async save(userId, token) {
         const encryptedData = encrypt(token, this.key);
-        await TokenModel.findOneAndUpdate(
+        await this.collection.updateOne(
             { userId },
-            { encryptedData },
-            { upsert: true, new: true }
+            { $set: { encryptedData } },
+            { upsert: true }
         );
     }
 
     async get(userId) {
-        const doc = await TokenModel.findOne({ userId });
+        const doc = await this.collection.findOne({ userId });
         if (!doc) return null;
         return decrypt(doc.encryptedData, this.key);
     }
 
     async remove(userId) {
-        const result = await TokenModel.deleteOne({ userId });
+        const result = await this.collection.deleteOne({ userId });
         return result.deletedCount > 0;
     }
 
     async has(userId) {
-        const count = await TokenModel.countDocuments({ userId });
+        const count = await this.collection.countDocuments({ userId }, { limit: 1 });
         return count > 0;
     }
 
-    // Yahan 'async get size()' ko 'async getSize()' kar diya hai
     async getSize() {
-        return await TokenModel.countDocuments();
+        return await this.collection.countDocuments();
     }
 
     async listUserIds() {
-        const docs = await TokenModel.find({}, 'userId');
+        const docs = await this.collection.find({}, { projection: { userId: 1 } }).toArray();
         return docs.map(d => d.userId);
     }
 }
