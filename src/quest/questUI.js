@@ -37,11 +37,44 @@ export function buildLinkModal() {
 }
 
 /**
- * 2. Link Prompt Card UI (Guide button removed)
+ * 2. Link Prompt Card UI (Dynamic Account Slot Support)
  */
-export function buildLinkPrompt() {
+export function buildLinkPrompt(linkedAccountInfo = null) {
+    let accountPanelContent = '';
+    let buttonLabel = 'Link';
+    let buttonStyle = ButtonStyle.Success;
+    let buttonId = 'link_slot_1_btn';
+
+    if (linkedAccountInfo && linkedAccountInfo.isLinked) {
+        // Agar account linked hai toh real data show hoga
+        const userName = linkedAccountInfo.displayName || linkedAccountInfo.username || 'Linked User';
+        const linkedDate = linkedAccountInfo.linkedAt || 'Recently';
+        const accountAgeDays = linkedAccountInfo.ageDays || 'Active';
+
+        accountPanelContent = 
+            `### **Account Panel**\n` +
+            `**#1 Account Configuration**\n\n` +
+            `• **Name:** ${userName}\n` +
+            `• **Status:** 🟢 Active\n` +
+            `• **Account Age:** ${accountAgeDays}\n` +
+            `• **Linked At:** ${linkedDate}`;
+        
+        buttonLabel = 'Unlink Account';
+        buttonStyle = ButtonStyle.Danger;
+        buttonId = 'unlink_slot_1_btn';
+    } else {
+        // Agar account linked nahi hai toh default unlinked state show hogi[span_1](start_span)[span_1](end_span)
+        accountPanelContent = 
+            `### **Account Panel**\n` +
+            `**#1 Account Configuration**\n\n` +
+            `• Not Linked (Free Slot)\n` +
+            `• **Status:** Not Active\n` +
+            `• **Account Age:** Free\n` +
+            `• **Linked At:** N/A`;
+    }
+
     const mainContainer = new ContainerBuilder()
-        .setAccentColor(0x2B2D31)
+        .setAccentColor(linkedAccountInfo?.isLinked ? 0x57F287 : 0x2B2D31)
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 `### **Free Link**\n\n` +
@@ -50,21 +83,14 @@ export function buildLinkPrompt() {
             )
         )
         .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `### **Account Panel**\n` +
-                `**#1 Account Configuration**\n\n` +
-                `• Not Linked (Free Slot)\n` +
-                `• **Status:** Not Active\n` +
-                `• **Account Age:** Free\n` +
-                `• **Linked At:** N/A`
-            )
+            new TextDisplayBuilder().setContent(accountPanelContent)
         )
         .addActionRowComponents(
             new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
-                    .setCustomId('link_slot_1_btn')
-                    .setLabel('Link')
-                    .setStyle(ButtonStyle.Success)
+                    .setCustomId(buttonId)
+                    .setLabel(buttonLabel)
+                    .setStyle(buttonStyle)
             )
         );
 
@@ -169,7 +195,8 @@ export function buildQuestInfoCard(quest, phase, claimed = 0, failReason = '') {
     const cfg = quest.config;
     const msgs = cfg.messages;
     const appId = cfg.application.id;
-    const thumbUrl = `https://cdn.discordapp.com/app-assets/${appId}/quest-assets/${cfg.assets.game_tile}.png`;
+    const assetHash = cfg.assets?.game_tile || cfg.assets?.hero;
+    const thumbUrl = assetHash ? `https://cdn.discordapp.com/app-assets/${appId}/quest-assets/${assetHash}.png` : null;
 
     const TASK_META = {
         PLAY_ON_DESKTOP: { icon: '🖥️', label: 'Play on Desktop' },
@@ -221,15 +248,18 @@ export function buildQuestInfoCard(quest, phase, claimed = 0, failReason = '') {
         : '';
 
     const c = new ContainerBuilder().setAccentColor(p.color);
-    c.addSectionComponents(
-        new SectionBuilder()
-            .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(
-                    `# ${p.title}\n### ${msgs.quest_name}\n*${msgs.game_title}*  •  ${msgs.game_publisher}`,
-                ),
-            )
-            .setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbUrl)),
-    );
+    const section = new SectionBuilder()
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `# ${p.title}\n### ${msgs.quest_name}\n*${msgs.game_title}*  •  ${msgs.game_publisher}`,
+            ),
+        );
+
+    if (thumbUrl) {
+        section.setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbUrl));
+    }
+
+    c.addSectionComponents(section);
     c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
     c.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
