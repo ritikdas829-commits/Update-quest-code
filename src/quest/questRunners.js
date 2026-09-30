@@ -184,7 +184,8 @@ export async function runQuestAll(userId, tokenStore, send, user = { username: '
             );
             c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
 
-            questStates.forEach((item) => {
+            // SAFE LIMIT: Max 3 quests rendered at once to prevent exceeding Discord's 40 components limit
+            questStates.slice(0, 3).forEach((item) => {
                 const cfg = item.quest.config;
                 const assetHash = cfg.assets?.game_tile || cfg.assets?.hero || cfg.assets?.quest_bar;
                 const thumbUrl = assetHash ? `https://cdn.discordapp.com/app-assets/${cfg.application.id}/quest-assets/${assetHash}.png` : null;
@@ -222,6 +223,12 @@ export async function runQuestAll(userId, tokenStore, send, user = { username: '
 
                 c.addSectionComponents(section);
             });
+
+            if (questStates.length > 3) {
+                c.addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(`-# *...and ${questStates.length - 3} more quest(s) queued below.*`)
+                );
+            }
 
             return { components: [c], flags: MessageFlags.IsComponentsV2 };
         };
