@@ -1,8 +1,15 @@
 import * as crypto from 'node:crypto';
-import * as fs from 'node:fs';
+import mongoose from 'mongoose';
 
-const STORE_FILE = 'tokens.json';
 const ALGORITHM = 'aes-256-gcm';
+
+// Mongoose Schema for Tokens
+const tokenSchema = new mongoose.Schema({
+    userId: { type: String, required: true, unique: true },
+    encryptedData: { type: String, required: true }
+});
+
+const TokenModel = mongoose.models.BotToken || mongoose.model('BotToken', tokenSchema);
 
 function deriveKey(secret) {
     return crypto.createHash('sha256').update(secret).digest();
@@ -31,54 +38,42 @@ function decrypt(stored, key) {
     }
 }
 
-function loadStore() {
-    try {
-        return JSON.parse(fs.readFileSync(STORE_FILE, 'utf8'));
-    } catch {
-        return {};
-    }
-}
-
-function saveStore(store) {
-    fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2));
-}
-
 export class TokenStore {
     constructor(secret) {
         this.key = deriveKey(secret);
     }
 
-    save(userId, token) {
-        const store = loadStore();
-        store[userId] = encrypt(token, this.key);
-        saveStore(store);
+    async save(userId, token) {
+        const encryptedData = encrypt(token, this.key);
+        await TokenModel.findOneAndUpdate(
+            { userId },
+            { encryptedData },
+            { upsert: true, new: true }
+        );
     }
 
-    get(userId) {
-        const store = loadStore();
-        const raw = store[userId];
-        if (!raw) return null;
-        return decrypt(raw, this.key);
+    async get(userId) {
+        const doc = await TokenModel.findOne({ userId });
+        if (!doc) return null;
+        return decrypt(doc.encryptedData, this.key);
     }
 
-    remove(userId) {
-        const store = loadStore();
-        if (!store[userId]) return false;
-        delete store[userId];
-        saveStore(store);
-        return true;
+    async remove(userId) {
+        const result = await TokenModel.deleteOne({ userId });
+        return result.deletedCount > 0;
     }
 
-    has(userId) {
-        const store = loadStore();
-        return !!store[userId];
+    async has(userId) {
+        const count = await TokenModel.countDocuments({ userId });
+        return count > 0;
     }
 
-    get size() {
-        return Object.keys(loadStore()).length;
+    async get size() {
+        return await TokenModel.countDocuments();
     }
 
-    listUserIds() {
-        return Object.keys(loadStore());
+    async listUserIds() {
+        const docs = await TokenModel.find({}, 'userId');
+        return docs.map(d => d.userId);
     }
 }
