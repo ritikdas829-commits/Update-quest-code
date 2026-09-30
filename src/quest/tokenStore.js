@@ -68,7 +68,8 @@ export class TokenStore {
         return count > 0;
     }
 
-    async get size() {
+    // Yahan 'async get size()' ko 'async getSize()' kar diya hai
+    async getSize() {
         return await TokenModel.countDocuments();
     }
 
