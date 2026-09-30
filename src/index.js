@@ -6,6 +6,7 @@ import { dirname, join } from 'path';
 import deployCommands from './utils/deployCommands.js';
 import { TokenStore } from './quest/tokenStore.js';
 import { writeFileSync, existsSync } from 'fs';
+import { MongoClient } from 'mongodb';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -37,8 +38,16 @@ function banner() {
 const TOKEN = process.env.DISCORD_TOKEN;
 if (!TOKEN) { console.error('DISCORD_TOKEN is not set.'); process.exit(1); }
 
-// Ensure data files exist
-if (!existsSync('tokens.json'))    writeFileSync('tokens.json', '{}');
+const MONGO_URI = process.env.MONGO_URI;
+if (!MONGO_URI) { console.error('MONGO_URI is not set in environment variables.'); process.exit(1); }
+
+// Connect to MongoDB
+const mongoClient = new MongoClient(MONGO_URI);
+await mongoClient.connect();
+const db = mongoClient.db('discord_quests'); // Aap yahan apne database ka naam likh sakte hain
+console.log('MongoDB Connected Successfully! ✅');
+
+// Ensure autoquest data file exists (Tokens ab MongoDB mein save honge, isliye tokens.json ki zaroorat nahi hai)
 if (!existsSync('autoquest.json')) writeFileSync('autoquest.json', '[]');
 
 banner();
@@ -56,7 +65,7 @@ const client = new Client({
 
 client.commands       = new Collection();
 client.prefixCommands = new Collection();
-client.tokenStore     = new TokenStore(TOKEN);
+client.tokenStore     = new TokenStore(TOKEN, db); // Database instance pass kar diya gaya hai
 
 const commandFiles = readdirSync(join(__dirname, 'commands')).filter(f => f.endsWith('.js'));
 for (const file of commandFiles) {
@@ -67,7 +76,6 @@ for (const file of commandFiles) {
         if (cmd?.prefix) client.prefixCommands.set(cmd.prefix, cmd);
     }
     for (const [key, cmd] of Object.entries(mod)) {
-        // 'handleLinkPromptButton' ko yahan allow kar diya hai taaki button clicks handle ho sakein
         if (key === 'default' || key === 'makeTokenStore' || key === 'TokenStore' || key === 'handleLinkModal') continue;
         if (cmd?.data)   client.commands.set(cmd.data.name, cmd);
         if (cmd?.prefix) client.prefixCommands.set(cmd.prefix, cmd);
