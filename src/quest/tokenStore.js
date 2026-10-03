@@ -32,7 +32,9 @@ function decrypt(stored, key) {
 export class TokenStore {
     constructor(secret, db) {
         this.key = deriveKey(secret);
-        this.collection = db.collection('tokens');
+        // Doosre bot ke liye alag collection (Aap chaho toh .env mein MONGO_COLLECTION=tokens_bot2 set kar sakte ho)
+        const collectionName = process.env.MONGO_COLLECTION || 'tokens_bot2';
+        this.collection = db.collection(collectionName);
     }
 
     async save(userId, token) {
