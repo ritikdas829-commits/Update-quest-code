@@ -102,8 +102,9 @@ export class QuestManager {
             try {
                 await this.acceptQuest(quest.id);
             } catch (err) {
-                log(`Could not enroll in "${questName}": ${err.message}`);
-                return false;
+                // FIXED: Handle ineligible or untargeted quests gracefully by skipping instead of hard failing
+                log(`[SKIP] "${questName}" is not available or eligible for this account: ${err.message}`);
+                return 'skipped';
             }
         }
 
@@ -216,7 +217,7 @@ export class QuestManager {
             return true;
 
         } else if (taskName === 'STREAM_ON_DESKTOP') {
-            log(`Stream quests cannot be completed automatically. Use the Discord desktop app for "${questName}".`);
+            log(`Stream quests cannot be completed automatically. Use the Discord desktop app for "${questName}" YAML/Stream.`);
             return false;
         } else if (taskName === 'PLAY_ACTIVITY') {
             log(`Activity quests are not supported. Use the Discord desktop app for "${questName}".`);
