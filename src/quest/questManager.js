@@ -42,10 +42,21 @@ export class QuestManager {
     getClaimable() {
         return this.list().filter((q) => q.isCompleted() && !q.hasClaimedRewards());
     }
+
+    // FIXED: Strict filtering to block fake/ghost quests from entering the queue
     filterQuestsValid() {
-        return this.list().filter(
-            (q) => q.id !== '1412491570820812933' && !q.isCompleted() && !q.isExpired(),
-        );
+        return this.list().filter((q) => {
+            if (q.id === '1412491570820812933' || q.isCompleted() || q.isExpired() || q.hasClaimedRewards()) {
+                return false;
+            }
+            const cfg = q.config;
+            if (!cfg || !cfg.messages || !cfg.messages.quest_name) return false;
+            
+            const taskConfig = cfg.task_config ?? cfg.task_config_v2;
+            if (!taskConfig || !taskConfig.tasks) return false;
+
+            return true;
+        });
     }
 
     async claimRewards(log = console.log) {
@@ -61,7 +72,10 @@ export class QuestManager {
         let claimed = 0;
         for (const quest of claimable) {
             try {
-                await this.client.post(`/quests/${quest.id}/claim-reward`);
+                // FIXED: Added required platform payload to prevent 400 Bad Request error
+                await this.client.post(`/quests/${quest.id}/claim-reward`, {
+                    platform: 'desktop'
+                });
                 claimed++;
                 log(`Claimed reward for "${quest.config.messages.quest_name}"`);
             } catch (err) {
@@ -102,7 +116,6 @@ export class QuestManager {
             try {
                 await this.acceptQuest(quest.id);
             } catch (err) {
-                // FIXED: Handle ineligible or untargeted quests gracefully by skipping instead of hard failing
                 log(`[SKIP] "${questName}" is not available or eligible for this account: ${err.message}`);
                 return 'skipped';
             }
@@ -134,6 +147,18 @@ export class QuestManager {
         const applicationName = quest.config.application.name;
 
         if (taskName === 'WATCH_VIDEO' || taskName === 'WATCH_VIDEO_ON_MOBILE') {
+            // FIXED: Instant completion for short video quests (<= 45s) to avoid false failures
+            if (secondsNeeded <= 45) {
+                try {
+                    await this.client.post(`/quests/${quest.id}/video-progress`, { timestamp: secondsNeeded });
+                    await this.#timeout(1000);
+                    log(`Quest "${questName}" completed instantly!`);
+                    return true;
+                } catch (err) {
+                    log(`Instant video progress failed for "${questName}": ${err.message}`);
+                }
+            }
+
             const maxFuture = 10, speed = 7, interval = 1;
             const enrolledAt = quest.userStatus?.enrolled_at
                 ? new Date(quest.userStatus.enrolled_at).getTime()
@@ -147,19 +172,19 @@ export class QuestManager {
                 const diff = maxAllowed - secondsDone;
                 const timestamp = secondsDone + speed;
 
-                if (diff >= speed) {
+                if (diff >= speed || secondsDone < secondsNeeded) {
                     try {
                         const res = await this.client.post(`/quests/${quest.id}/video-progress`, {
                             timestamp: Math.min(secondsNeeded, timestamp + Math.random()),
                         });
                         secondsDone = Math.min(secondsNeeded, timestamp);
-                        if (res?.completed_at || res?.user_status?.completed_at) break;
+                        if (res?.completed_at || res?.user_status?.completed_at || quest.isCompleted()) break;
                     } catch (err) {
                         log(`Video progress beat failed for "${questName}": ${err.message}. Retrying...`);
                     }
                 }
 
-                if (secondsDone >= secondsNeeded) break;
+                if (secondsDone >= secondsNeeded || quest.isCompleted()) break;
                 await this.#timeout(interval * 1000);
             }
 
@@ -168,6 +193,7 @@ export class QuestManager {
             } catch { /* best effort */ }
 
             log(`Quest "${questName}" completed!`);
+            return true;
 
         } else if (taskName === 'PLAY_ON_DESKTOP') {
             const interval = 30;
@@ -217,7 +243,7 @@ export class QuestManager {
             return true;
 
         } else if (taskName === 'STREAM_ON_DESKTOP') {
-            log(`Stream quests cannot be completed automatically. Use the Discord desktop app for "${questName}" YAML/Stream.`);
+            log(`Stream quests cannot be completed automatically. Use the Discord desktop app for "${questName}".`);
             return false;
         } else if (taskName === 'PLAY_ACTIVITY') {
             log(`Activity quests are not supported. Use the Discord desktop app for "${questName}".`);
