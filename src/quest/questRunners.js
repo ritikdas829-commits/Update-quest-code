@@ -107,7 +107,8 @@ export async function runQuestOne(userId, tokenStore, send) {
         const questDoneBefore = quest.isCompleted();
 
         if (!questDoneBefore) {
-            await manager.doingQuest(quest, (msg) => {
+            let lastEditTime = 0;
+            await manager.doingQuest(quest, async (msg) => {
                 log(msg);
                 const taskConfig = quest.config.task_config ?? quest.config.task_config_v2;
                 const tasks = taskConfig?.tasks ?? {};
@@ -118,7 +119,13 @@ export async function runQuestOne(userId, tokenStore, send) {
                 const currentVal = Number(progressObj?.[firstTaskKey]?.value || progressObj?.[Object.keys(progressObj)[0]]?.value || 0);
 
                 const calculatedPct = Math.min(100, Math.max(0, Math.floor((currentVal / target) * 100)));
-                progressMsg.edit(buildSingleCard('⚙️ Solving...', `${calculatedPct}%`)).catch(() => {});
+                
+                // Rate-limit prevention: Edit message only if 4 seconds have passed
+                const now = Date.now();
+                if (now - lastEditTime > 4000) {
+                    lastEditTime = now;
+                    await progressMsg.edit(buildSingleCard('⚙️ Solving...', `${calculatedPct}%`)).catch(() => {});
+                }
             });
         }
 
@@ -263,7 +270,8 @@ export async function runQuestAll(userId, tokenStore, send, user = { username: '
                 const questDoneBefore = quest.isCompleted();
 
                 if (!questDoneBefore) {
-                    await manager.doingQuest(quest, (msg) => {
+                    let lastEditTime = 0;
+                    await manager.doingQuest(quest, async (msg) => {
                         log(msg);
                         const taskConfig = quest.config.task_config ?? quest.config.task_config_v2;
                         const tasks = taskConfig?.tasks ?? {};
@@ -276,7 +284,12 @@ export async function runQuestAll(userId, tokenStore, send, user = { username: '
                         const calculatedPct = Math.min(100, Math.max(0, Math.floor((currentVal / target) * 100)));
                         questStates[i].progress = `${calculatedPct}%`;
 
-                        dashboardMsg.edit(buildDashboardCard(`Processing: ${quest.config.messages.quest_name}`)).catch(() => {});
+                        // Rate-limit prevention for dashboard edits
+                        const now = Date.now();
+                        if (now - lastEditTime > 4000) {
+                            lastEditTime = now;
+                            await dashboardMsg.edit(buildDashboardCard(`Processing: ${quest.config.messages.quest_name}`)).catch(() => {});
+                        }
                     });
                 }
 
